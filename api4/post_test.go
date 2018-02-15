@@ -1373,6 +1373,29 @@ func TestSearchPostsInChannel(t *testing.T) {
 
 }
 
+func TestSearchPostsInChannel_WithoutViewTeamPermission(t *testing.T) {
+	th := Setup().InitBasic()
+	defer th.TearDown()
+	th.LoginBasic()
+	Client := th.Client
+
+	channel := th.CreatePublicChannel()
+
+	message := "alabaster wood furniture"
+	_ = th.CreateMessagePostWithClient(Client, channel, message)
+
+	// Verify setup
+	if posts, _ := Client.SearchPosts(th.BasicTeam.Id, "alabaster", false); len(posts.Order) != 1 {
+		t.Fatalf("wrong number of posts returned %v", len(posts.Order))
+	}
+
+	th.RemovePermissionFromRole(model.PERMISSION_VIEW_TEAM.Id, "team_user")
+	defer th.AddPermissionToRole(model.PERMISSION_VIEW_TEAM.Id, "team_user")
+	if _, response := Client.SearchPosts(th.BasicTeam.Id, "alabaster", false); response.Error == nil {
+		t.Fatal("Expected error without the view_team permission.")
+	}
+}
+
 func TestSearchPostsFromUser(t *testing.T) {
 	th := Setup().InitBasic()
 	defer th.TearDown()
