@@ -1396,6 +1396,30 @@ func TestSearchPostsInChannel_WithoutViewTeamPermission(t *testing.T) {
 	}
 }
 
+func TestSearchPostsInChannel_WithoutViewChannelPermission(t *testing.T) {
+	th := Setup().InitBasic()
+	defer th.TearDown()
+	th.LoginBasic()
+	Client := th.Client
+
+	channel := th.CreatePublicChannel()
+
+	message := "alabaster wood furniture"
+	_ = th.CreateMessagePostWithClient(Client, channel, message)
+
+	// Verify setup
+	if posts, _ := Client.SearchPosts(th.BasicTeam.Id, "alabaster", false); len(posts.Order) != 1 {
+		t.Fatalf("wrong number of posts returned %v", len(posts.Order))
+	}
+
+	th.RemovePermissionFromRole(model.PERMISSION_READ_CHANNEL.Id, "channel_user")
+	defer th.AddPermissionToRole(model.PERMISSION_READ_CHANNEL.Id, "channel_user")
+
+	if posts, _ := Client.SearchPosts(th.BasicTeam.Id, "alabaster", false); len(posts.Order) != 0 {
+		t.Fatalf("Did not expect posts returned for channel without channel_user role")
+	}
+}
+
 func TestSearchPostsFromUser(t *testing.T) {
 	th := Setup().InitBasic()
 	defer th.TearDown()
